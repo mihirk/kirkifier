@@ -62,6 +62,9 @@ DATABASES = {
     }
 }
 
+TEMPLATE_DIRS = (
+    '/vagrant/kirkifier/kirkifier'
+)
 # Internationalization
 # https://docs.djangoproject.com/en/1.6/topics/i18n/
 

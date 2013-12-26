@@ -20,7 +20,7 @@ class Face:
 class Kirkify:
 	def get_source_image_face_coordinates(self, source_image_name):
 		image_to_be_kirkified = cv2.imread(source_image_name)
-		face_cascade = cv2.CascadeClassifier("haarcascade_frontalface_alt2.xml") 
+		face_cascade = cv2.CascadeClassifier("/vagrant/kirkifier/kirkifier/haarcascade_frontalface_alt2.xml") 
 		faces = face_cascade.detectMultiScale(image_to_be_kirkified)
 		detected_faces = []
 		for face in faces:    
@@ -36,8 +36,11 @@ class Kirkify:
 		return kirk_image_handle.resize(new_kirk_image_size)
 		
 
-	def get_source_image_name(self):
-		return sys.argv[1]
+	def get_source_image_name(self,file):
+		with open('/vagrant/kirkifier/kirkifier/source.png','wb+') as destination:
+			for chunk in file.chunks():
+				destination.write(chunk)
+		return "/vagrant/kirkifier/kirkifier/source.png"
 
 	def kirkify_faces(self, kirk_image_handle, source_image_handle, faces_coordinates):
 		kirkified_image_handle = source_image_handle
@@ -63,12 +66,10 @@ class Kirkify:
 	def get_image_handle(self,image_name):
 		return Image.open(image_name)
 
-	def main(self):
-		source_image_name = self.get_source_image_name()
-		kirk_image_handle = self.get_image_handle("kirk.png")
+	def main(self, file):
+		source_image_name = self.get_source_image_name(file)
+		kirk_image_handle = self.get_image_handle("/vagrant/kirkifier/kirkifier/kirk.png")
 		source_image_handle = self.get_image_handle(source_image_name)
 		faces_coordinates = self.get_source_image_face_coordinates(source_image_name)
 		kirkified_image_handle = self.kirkify_faces(kirk_image_handle, source_image_handle, faces_coordinates)
-		kirkified_image_handle.save("kirkified_image.png")
-
-Kirkify().main()
+		kirkified_image_handle.save("/vagrant/kirkifier/kirkifier/kirkified_image.png")
