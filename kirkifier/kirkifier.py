@@ -2,6 +2,9 @@ import numpy as np
 import cv2
 import sys
 from PIL import Image
+from django.conf import settings
+import os
+PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
 
 
 class Face:
@@ -11,36 +14,37 @@ class Face:
 		self.RIGHT_UP = point3
 		self.LEFT_DOWN = point4
 	def face_width(self):
-		return self.RIGHT_UP[0] - self.LEFT_UP[0]
+		return abs(self.RIGHT_UP[0] - self.LEFT_UP[0])
 	def face_height(self):
-		return self.RIGHT_DOWN[1] - self.RIGHT_UP[1]
+		return abs(self.RIGHT_DOWN[1] - self.RIGHT_UP[1])
 	def __str__(self):
 		return str(self.LEFT_UP) + str(self.RIGHT_UP) + str(self.LEFT_DOWN) + str(self.RIGHT_DOWN)
 
 class Kirkify:
 	def get_source_image_face_coordinates(self, source_image_name):
 		image_to_be_kirkified = cv2.imread(source_image_name)
-		face_cascade = cv2.CascadeClassifier("/vagrant/kirkifier/kirkifier/haarcascade_frontalface_alt2.xml") 
+		face_cascade = cv2.CascadeClassifier(PROJECT_ROOT + "/haarcascade_frontalface_alt2.xml")
 		faces = face_cascade.detectMultiScale(image_to_be_kirkified)
 		detected_faces = []
-		for face in faces:    
+		for face in faces:
 			LEFT_UP = (face[0], face[1])
 			RIGHT_DOWN = ((face[0]+face[2]), (face[0] + face[3]))
 			RIGHT_UP = (face[0]+face[2], face[1])
 			LEFT_DOWN = (face[0], face[0]+face[3])
 			detected_faces.append(Face(LEFT_UP, RIGHT_DOWN, RIGHT_UP, LEFT_DOWN))
 		return detected_faces
-	
+
 	def resize_kirk(self, kirk_image_handle, width, height):
 		new_kirk_image_size = (width, height)
 		return kirk_image_handle.resize(new_kirk_image_size)
-		
+
 
 	def get_source_image_name(self,file):
-		with open('/vagrant/kirkifier/kirkifier/source.png','wb+') as destination:
+		with open(settings.MEDIA_ROOT + '/source.png','wb+') as destination:
 			for chunk in file.chunks():
 				destination.write(chunk)
-		return "/vagrant/kirkifier/kirkifier/source.png"
+		return settings.MEDIA_ROOT + "/source.png"
+		
 
 	def kirkify_faces(self, kirk_image_handle, source_image_handle, faces_coordinates):
 		kirkified_image_handle = source_image_handle
@@ -57,7 +61,7 @@ class Kirkify:
 		source_image_handle.paste(kirk_image_handle, (face_coordinates.LEFT_UP), mask=kirk_image_handle)
 		return source_image_handle
 
-	
+
 
 	def ready_for_kirkification(self, image_handle):
 		image_handle = image_handle.convert('RGBA')
@@ -66,10 +70,14 @@ class Kirkify:
 	def get_image_handle(self,image_name):
 		return Image.open(image_name)
 
+	def get_project_path(self):
+		return PROJECT_ROOT
+
 	def main(self, file):
 		source_image_name = self.get_source_image_name(file)
-		kirk_image_handle = self.get_image_handle("/vagrant/kirkifier/kirkifier/kirk.png")
+		kirk_image_handle = self.get_image_handle(PROJECT_ROOT + "/static/images/kirk.png")
 		source_image_handle = self.get_image_handle(source_image_name)
-		faces_coordinates = self.get_source_image_face_coordinates(source_image_name)
+		faces_coordinates = self.get_source_image_face_coordinates(source_image_name) #rename to multiple faces
 		kirkified_image_handle = self.kirkify_faces(kirk_image_handle, source_image_handle, faces_coordinates)
-		kirkified_image_handle.save("/vagrant/kirkifier/kirkifier/kirkified_image.png")
+		kirkified_image_handle.save(settings.MEDIA_ROOT + "/kirkified_image.png")
+		return "kirkified_image.png"
